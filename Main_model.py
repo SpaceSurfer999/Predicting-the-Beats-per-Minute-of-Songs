@@ -77,12 +77,10 @@ def create_features_2(df):
     df = df.copy()
     columns = df.columns.to_list()
 
-    # log
     for col in columns:
 
         df[f'log_{col}'] = np.log1p(df[col]-df[col].min())
 
-    # quantile
     quantile_transformer = QuantileTransformer(
         output_distribution='normal')
     quantile_features = columns  # ['RhythmScore', 'Energy', 'AudioLoudness']
@@ -91,13 +89,11 @@ def create_features_2(df):
     for i, feature in enumerate(quantile_features):
         df[f'{feature}_quantile'] = quantile_transformed[:, i]
 
-    # polynom
     for col in columns:
         df[f'squared_{col}'] = df[col]**2
         df[f'cube_{col}'] = df[col]**3
         df[f'sqrt_{col}'] = np.sqrt(np.abs(df[col]))
 
-    # statistic
     for col in columns:
         df[f'zscore_{col}'] = (df[col] - df[col].mean())/df[col].std()
 
@@ -110,35 +106,28 @@ def create_features_3(df):
     """Create additional features that might help predict BPM"""
     df = df.copy()
 
-    # Rhythm and Energy interactions
     df['RhythmEnergyProduct'] = df['RhythmScore'] * df['Energy']
     df['RhythmEnergyRatio'] = df['RhythmScore'] / (df['Energy'] + 1e-8)
 
-    # Audio characteristics
     df['LoudnessEnergyProduct'] = df['AudioLoudness'] * df['Energy']
     df['VocalInstrumentalRatio'] = df['VocalContent'] / \
         (df['InstrumentalScore'] + 1e-8)
 
-    # Track duration features
     df['DurationMoodProduct'] = df['TrackDurationMs'] * df['MoodScore']
 
-    # Performance and quality features
     df['QualityPerformanceProduct'] = df['AcousticQuality'] * \
         df['LivePerformanceLikelihood']
 
-    # Polynomial features for top correlated features
     top_3_features = ['RhythmScore', 'MoodScore', 'TrackDurationMs']
     for feature in top_3_features:
         df[f'{feature}_squared'] = df[feature] ** 2
         df[f'{feature}_sqrt'] = np.sqrt(np.abs(df[feature]))
 
-    # Binned features
     df['EnergyBin'] = pd.qcut(df['Energy'],  q=[0, .2, .4, .6, .8, 1],
                               labels=False)
     df['RhythmBin'] = pd.qcut(df['RhythmScore'],  q=[0, .2, .4, .6, .8, 1],
                               labels=False)
 
-    # Interaction between rhythm and tempo-related features
     df['RhythmDurationInteraction'] = df['RhythmScore'] * df['TrackDurationMs']
 
     return df
@@ -254,7 +243,6 @@ def main(create, n_folds):
     results_df = pd.DataFrame(results)
     results_df = results_df.sort_values('RMSE_score')
 
-    # Печать для отладки
     print(f"Results DataFrame shape: {results_df.shape}")
 
     return scaled_X, scaled_test, results_df
@@ -265,7 +253,7 @@ if __name__ == "__main__":
     print(f"Start time:\n{start}")
 
     scaled_X, scaled_test, results_df = main(create=3, n_folds=5)
-    # Добавьте вывод results_df для проверки
+
     print(f"\nResults DataFrame:\n{results_df}")
 
     print(f"\nTime spent\n{datetime.now()-start}")
